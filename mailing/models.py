@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models
 
 # Create your models here.
@@ -19,24 +20,30 @@ class Message(models.Model):
 
 class Mailing(models.Model):
 
-    STATUS_CHOICES = [
-        ('created', 'создана'),
-        ('sent', 'отправлена'),
-        ('completed', 'завершена'),
-        ('canceled', 'отменена')
-    ]
-
     SENDING = [
         ('once a day', 'раз в день'),
         ('once a week', 'раз в неделю'),
         ('once a month', 'раз в месяц'),
     ]
 
-    sending_date = models.DateTimeField(blank=True, null=True, verbose_name="Дата отправки")
-    status = models.CharField(max_length=50, default='created', choices=STATUS_CHOICES, verbose_name="Состояние рассылки")
+    start_time = models.DateTimeField(blank=True, null=True, verbose_name="Дата и время начала")
+    end_time = models.DateTimeField(blank=True, null=True, verbose_name="Дата и время окончания")
     periodicity = models.CharField(max_length=20, default='once a day', choices=SENDING, verbose_name="Периодичность")
-    client = models.ManyToManyField(Client, verbose_name="Получатель")
+    recipients  = models.ManyToManyField(Client, verbose_name="Получатель")
     message = models.ForeignKey(Message, on_delete=models.PROTECT, verbose_name="Сообщение")
+
+    @property
+    def status(self):
+        now = timezone.now()
+        if now < self.start_time:
+            return 'Создана'
+        elif self.start_time <= now <= self.end_time:
+            return 'Запущена'
+        else:
+            return 'Завершена'
+
+    def __str__(self):
+        return f"Рассылка {self.id} ({self.status})"
 
 class MailingLog(models.Model):
     mailing = models.ForeignKey(Mailing, on_delete=models.CASCADE, verbose_name="Рассылка")
