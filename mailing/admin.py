@@ -17,4 +17,4 @@ class MailingAdmin(admin.ModelAdmin):
 
 @admin.register(MailingLog)
 class MailingLogAdmin(admin.ModelAdmin):
-    list_display = ('id', 'date', 'status')
+    list_display = ('mailing', 'attempt_time', 'status', 'server_response')

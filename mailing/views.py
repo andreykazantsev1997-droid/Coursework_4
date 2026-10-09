@@ -4,12 +4,23 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from .forms import ClientForm, MessageForm, MailingForm
 from .models import Client, Message, Mailing, MailingLog
 
 
 # Create your views here.
+
+class MainMenuView(TemplateView):
+    model = Mailing
+    template_name = 'mailing/home.html'
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['mailings_count'] = Mailing.objects.count()
+        context['clients_count'] = Client.objects.count()
+        context['active_mailings_count'] = Mailing.objects.filter(start_time__lte=timezone.now(), end_time__gte=timezone.now()).count()
+        return context
 
 class ClientCreateView(CreateView):
     model = Client
@@ -98,7 +109,7 @@ def mailing(request, pk):
             MailingLog.objects.create(mailing=mailing, status=True)
 
         except Exception as e:
-            MailingLog.objects.create(mailing=mailing, status=False, answer=str(e))
+            MailingLog.objects.create(mailing=mailing, status=False, server_response=str(e))
 
     messages.success(request, "Рассылка успешно выполнена")
     return redirect('mailing:mailings')
