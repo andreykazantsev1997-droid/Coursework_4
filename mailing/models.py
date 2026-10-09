@@ -47,6 +47,7 @@ class Mailing(models.Model):
 
 class MailingLog(models.Model):
     mailing = models.ForeignKey(Mailing, on_delete=models.CASCADE, verbose_name="Рассылка")
-    date = models.DateTimeField(auto_now_add=True, verbose_name="Дата последней попытки")
+    attempt_time = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время последней попытки")
     status = models.BooleanField(default=False)
-    answer = models.TextField(blank=True, null=True, verbose_name="Ответ почтового сервера")
+    server_response = models.TextField(blank=True, null=True, verbose_name="Ответ почтового сервера")
+

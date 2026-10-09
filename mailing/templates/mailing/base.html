@@ -8,8 +8,9 @@
 </head>
 <body>
 <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom box-shadow">
-    <h5 class="my-0 mr-md-auto font-weight-normal">Управление рассылками</h5>
+    <a href="{% url 'mailing:home' %}" class="my-0 mr-md-auto font-weight-normal text-dark text-decoration-none h5">Управление рассылками</a>
     <nav class="my-2 my-md-0 mr-md-3">
+        <a class="btn btn-outline-primary btn-sm mx-1" href="{% url 'mailing:home' %}">Главная</a>
         <a class="btn btn-outline-primary btn-sm mx-1" href="{% url 'mailing:clients' %}">Клиенты</a>
         <a class="btn btn-outline-primary btn-sm mx-1" href="{% url 'mailing:messages' %}">Сообщения</a>
         <a class="btn btn-outline-primary btn-sm mx-1" href="{% url 'mailing:mailings' %}">Рассылки</a>
