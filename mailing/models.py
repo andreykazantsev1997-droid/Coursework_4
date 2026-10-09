@@ -26,8 +26,8 @@ class Mailing(models.Model):
         ('once a month', 'раз в месяц'),
     ]
 
-    start_time = models.DateTimeField(blank=True, null=True, verbose_name="Дата и время начала")
-    end_time = models.DateTimeField(blank=True, null=True, verbose_name="Дата и время окончания")
+    start_time = models.DateTimeField(verbose_name="Дата и время начала")
+    end_time = models.DateTimeField(verbose_name="Дата и время окончания")
     periodicity = models.CharField(max_length=20, default='once a day', choices=SENDING, verbose_name="Периодичность")
     recipients  = models.ManyToManyField(Client, verbose_name="Получатель")
     message = models.ForeignKey(Message, on_delete=models.PROTECT, verbose_name="Сообщение")
@@ -47,6 +47,6 @@ class Mailing(models.Model):
 
 class MailingLog(models.Model):
     mailing = models.ForeignKey(Mailing, on_delete=models.CASCADE, verbose_name="Рассылка")
-    date = models.DateTimeField(blank=True, null=True, verbose_name="Дата последней попытки")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Дата последней попытки")
     status = models.BooleanField(default=False)
     answer = models.TextField(blank=True, null=True, verbose_name="Ответ почтового сервера")

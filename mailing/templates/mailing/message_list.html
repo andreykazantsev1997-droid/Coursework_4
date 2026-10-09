@@ -17,9 +17,8 @@
             <tr>
                 <td>{{ object.topic }}</td>
                 <td class="text-end">
-                    <a href="{% url 'mailing:message_view' object.pk %}" class="btn btn-info btn-sm text-white">Смотреть</a>
-                    <a href="{% url 'mailing:message_edit' object.pk %}" class="btn btn-warning btn-sm">Редактировать</a>
-                    <a href="{% url 'mailing:message_delete' object.pk %}" class="btn btn-danger btn-sm">Удалить</a>
+                    <a href="{% url 'mailing:messages_edit' object.pk %}" class="btn btn-warning btn-sm">Редактировать</a>
+                    <a href="{% url 'mailing:messages_delete' object.pk %}" class="btn btn-danger btn-sm">Удалить</a>
                 </td>
             </tr>
             {% empty %}
