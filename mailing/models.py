@@ -1,5 +1,6 @@
 from django.utils import timezone
 from django.db import models
+from django.conf import settings
 
 # Create your models here.
 
@@ -31,6 +32,7 @@ class Mailing(models.Model):
     periodicity = models.CharField(max_length=20, default='once a day', choices=SENDING, verbose_name="Периодичность")
     recipients  = models.ManyToManyField(Client, verbose_name="Получатель")
     message = models.ForeignKey(Message, on_delete=models.PROTECT, verbose_name="Сообщение")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
 
     @property
     def status(self):

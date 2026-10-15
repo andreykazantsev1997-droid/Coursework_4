@@ -16,10 +16,20 @@ class MainMenuView(TemplateView):
     template_name = 'mailing/home.html'
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated:
+            context['mailings_count'] = Mailing.objects.filter(user=self.request.user).count()
+            context['clients_count'] = Client.objects.filter(mailing__user=self.request.user).distinct().count()
+            context['active_mailings_count'] = Mailing.objects.filter(user=self.request.user, start_time__lte=timezone.now(), end_time__gte=timezone.now()).count()
+            context['successful_plots'] = MailingLog.objects.filter(mailing__user=self.request.user, status=True).count()
+            context['unsuccessful_plots'] = MailingLog.objects.filter(mailing__user=self.request.user, status=False).count()
 
-        context['mailings_count'] = Mailing.objects.count()
-        context['clients_count'] = Client.objects.count()
-        context['active_mailings_count'] = Mailing.objects.filter(start_time__lte=timezone.now(), end_time__gte=timezone.now()).count()
+        else:
+            context['mailings_count'] = 0
+            context['clients_count'] = 0
+            context['active_mailings_count'] = 0
+            context['successful_plots'] = 0
+            context['unsuccessful_plots'] = 0
+
         return context
 
 class ClientCreateView(CreateView):
@@ -76,6 +86,12 @@ class MailingCreateView(CreateView):
     template_name = 'mailing/mailing_form.html'
     success_url = reverse_lazy('mailing:mailings')
 
+    def form_valid(self, form):
+        mailing = form.save(commit=False)
+        mailing.user = self.request.user
+        mailing.save()
+        return super().form_valid(form)
+
 class MailingListView(ListView):
     model = Mailing
     template_name = 'mailing/mailing_list.html'
@@ -103,6 +119,8 @@ def mailing(request, pk):
         return redirect('mailing:mailings')
 
     recipients = mailing.recipients.all()
+    mailing.status = 'started'
+    mailing.save()
     for recipient in recipients:
         try:
             send_mail(mailing.message.topic, mailing.message.text, settings.EMAIL_HOST_USER, [recipient.email])
