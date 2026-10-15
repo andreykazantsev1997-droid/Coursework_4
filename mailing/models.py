@@ -9,6 +9,14 @@ class Client(models.Model):
     email = models.EmailField(unique=True)
     comment = models.TextField(blank=True, null=True, verbose_name="Комментарий")
 
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name="Пользователь",
+        blank=True,
+        null=True
+    )
+
     def __str__(self):
         return self.name
 

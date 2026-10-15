@@ -43,6 +43,7 @@ class ClientCreateView(CreateView):
 class ClientListView(ListView):
     model = Client
     template_name = 'mailing/client_list.html'
+
     def get_queryset(self):
         if self.request.user.groups.filter(name='managers').exists() or self.request.user.is_superuser:
             return Client.objects.all()

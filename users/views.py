@@ -1,5 +1,4 @@
 import secrets
-
 from django.contrib.auth.decorators import user_passes_test
 from django.http import HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
@@ -67,3 +66,19 @@ def toggle_user_active(request, pk):
         user_item.is_active = not user_item.is_active
         user_item.save()
     return redirect('users:user_list')
+
+def reset_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        user = get_object_or_404(User, email=email)
+        new_password = secrets.token_hex(4)
+        user.set_password(new_password)
+        user.save()
+        send_mail(
+            subject="Восстановление пароля",
+            message=f"Ваш новый пароль для входа: {new_password}",
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[user.email]
+        )
+        return redirect('users:login')
+    return render(request, 'users/reset_password.html')
