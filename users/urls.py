@@ -1,6 +1,6 @@
 from django.urls import path
 from users.apps import UsersConfig
-from users.views import UserLoginView, UserLogoutView, UserRegisterView, confirm_email
+from users.views import UserLoginView, UserLogoutView, UserRegisterView, confirm_email, UserListView, toggle_user_active
 
 app_name = UsersConfig.name
 
@@ -9,4 +9,7 @@ urlpatterns = [
     path('logout/', UserLogoutView.as_view(), name='logout'),
     path('register/', UserRegisterView.as_view(), name='register'),
     path('confirm-email/<str:token>/', confirm_email, name='confirm_email'),
+    path('users/', UserListView.as_view(), name='user_list'),
+    path('users/toggle/<int:pk>/', toggle_user_active, name='toggle_user_active'),
+
 ]
