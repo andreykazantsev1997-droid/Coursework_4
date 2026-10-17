@@ -40,6 +40,12 @@ class ClientCreateView(CreateView):
     template_name = 'mailing/client_form.html'
     success_url = reverse_lazy('mailing:clients')
 
+    def form_valid(self, form):
+        client = form.save(commit=False)
+        client.user = self.request.user
+        client.save()
+        return super().form_valid(form)
+
 class ClientListView(ListView):
     model = Client
     template_name = 'mailing/client_list.html'
@@ -49,9 +55,6 @@ class ClientListView(ListView):
             return Client.objects.all()
         else:
             return Client.objects.filter(user=self.request.user)
-
-class ClientDetailView(DetailView):
-    model = Client
 
 class ClientUpdateView(UpdateView):
     model = Client
@@ -88,12 +91,15 @@ class MessageCreateView(CreateView):
     template_name = 'mailing/message_form.html'
     success_url = reverse_lazy('mailing:messages')
 
+    def form_valid(self, form):
+        client = form.save(commit=False)
+        client.user = self.request.user
+        client.save()
+        return super().form_valid(form)
+
 class MessageListView(ListView):
     model = Message
     template_name = 'mailing/message_list.html'
-
-class MessageDetailView(DetailView):
-    model = Message
 
 class MessageUpdateView(UpdateView):
     model = Message
@@ -127,10 +133,6 @@ class MailingListView(ListView):
             return Mailing.objects.all()
         else:
             return Mailing.objects.filter(user=self.request.user)
-
-class MailingDetailView(DetailView):
-    model = Mailing
-    template_name = 'mailing/mailing_detail.html'
 
 class MailingUpdateView(UpdateView):
     model = Mailing
@@ -188,10 +190,5 @@ def is_manager_check(user):
 @user_passes_test(is_manager_check)
 def toggle_mailing_active(request, pk):
     mailing = get_object_or_404(Mailing, pk=pk)
-    if mailing.status == 'started':
-        mailing.status = 'completed'
-    else:
-        mailing.status = 'started'
-
+    mailing.is_active = not mailing.is_active
     mailing.save()
-    return redirect('mailing:mailings')

@@ -5,6 +5,10 @@ from django.conf import settings
 # Create your models here.
 
 class Client(models.Model):
+    class Meta:
+        verbose_name = "Клиент"
+        verbose_name_plural = "Клиенты"
+
     name = models.CharField(max_length=150, verbose_name="ФИО")
     email = models.EmailField(unique=True)
     comment = models.TextField(blank=True, null=True, verbose_name="Комментарий")
@@ -21,13 +25,29 @@ class Client(models.Model):
         return self.name
 
 class Message(models.Model):
+    class Meta:
+        verbose_name = "Сообщение"
+        verbose_name_plural = "Сообщения"
+
     topic = models.CharField(max_length=150, verbose_name="Тема сообщения")
     text = models.TextField(verbose_name="Текст сообщения")
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name="Владелец",
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return self.topic
 
 class Mailing(models.Model):
+
+    class Meta:
+        verbose_name = "Рассылка"
+        verbose_name_plural = "Рассылки"
 
     SENDING = [
         ('once a day', 'раз в день'),
@@ -41,9 +61,12 @@ class Mailing(models.Model):
     recipients  = models.ManyToManyField(Client, verbose_name="Получатель")
     message = models.ForeignKey(Message, on_delete=models.PROTECT, verbose_name="Сообщение")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    is_active = models.BooleanField(default=True, verbose_name="Активна")
 
     @property
     def status(self):
+        if not self.is_active:
+            return 'Завершена'
         now = timezone.now()
         if now < self.start_time:
             return 'Создана'
@@ -56,6 +79,11 @@ class Mailing(models.Model):
         return f"Рассылка {self.id} ({self.status})"
 
 class MailingLog(models.Model):
+
+    class Meta:
+        verbose_name = "Лог рассылки"
+        verbose_name_plural = "Логи рассылки"
+
     mailing = models.ForeignKey(Mailing, on_delete=models.CASCADE, verbose_name="Рассылка")
     attempt_time = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время последней попытки")
     status = models.BooleanField(default=False)
