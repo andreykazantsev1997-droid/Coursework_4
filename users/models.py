@@ -11,3 +11,6 @@ class User(AbstractUser):
     token = models.CharField(max_length=100, blank=True, null=True, verbose_name="Токен подтверждения")
     objects = UserManager()
 
+@property
+def is_manager(self):
+    return self.groups.filter(name='managers').exists()

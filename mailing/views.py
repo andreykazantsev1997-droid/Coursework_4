@@ -1,8 +1,10 @@
+from django.contrib.auth.decorators import user_passes_test
+from django.http import HttpResponseForbidden
 from django.utils import timezone
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from .forms import ClientForm, MessageForm, MailingForm
@@ -38,12 +40,21 @@ class ClientCreateView(CreateView):
     template_name = 'mailing/client_form.html'
     success_url = reverse_lazy('mailing:clients')
 
+    def form_valid(self, form):
+        client = form.save(commit=False)
+        client.user = self.request.user
+        client.save()
+        return super().form_valid(form)
+
 class ClientListView(ListView):
     model = Client
     template_name = 'mailing/client_list.html'
 
-class ClientDetailView(DetailView):
-    model = Client
+    def get_queryset(self):
+        if self.request.user.groups.filter(name='managers').exists() or self.request.user.is_superuser:
+            return Client.objects.all()
+        else:
+            return Client.objects.filter(user=self.request.user)
 
 class ClientUpdateView(UpdateView):
     model = Client
@@ -51,10 +62,28 @@ class ClientUpdateView(UpdateView):
     template_name = 'mailing/client_form.html'
     success_url = reverse_lazy('mailing:clients')
 
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        is_owner = obj.user == request.user
+
+        if not (is_owner or request.user.is_superuser):
+            return HttpResponseForbidden("У вас нет прав на редактирование этого клиента")
+
+        return super().dispatch(request, *args, **kwargs)
+
 class ClientDeleteView(DeleteView):
     model = Client
     template_name = 'mailing/client_confirm_delete.html'
     success_url = reverse_lazy('mailing:clients')
+
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        is_owner = obj.user == request.user
+
+        if not (is_owner or request.user.is_superuser):
+            return HttpResponseForbidden("У вас нет прав на удаление этого клиента")
+
+        return super().dispatch(request, *args, **kwargs)
 
 class MessageCreateView(CreateView):
     model = Message
@@ -62,12 +91,15 @@ class MessageCreateView(CreateView):
     template_name = 'mailing/message_form.html'
     success_url = reverse_lazy('mailing:messages')
 
+    def form_valid(self, form):
+        client = form.save(commit=False)
+        client.user = self.request.user
+        client.save()
+        return super().form_valid(form)
+
 class MessageListView(ListView):
     model = Message
     template_name = 'mailing/message_list.html'
-
-class MessageDetailView(DetailView):
-    model = Message
 
 class MessageUpdateView(UpdateView):
     model = Message
@@ -96,9 +128,11 @@ class MailingListView(ListView):
     model = Mailing
     template_name = 'mailing/mailing_list.html'
 
-class MailingDetailView(DetailView):
-    model = Mailing
-    template_name = 'mailing/mailing_detail.html'
+    def get_queryset(self):
+        if self.request.user.groups.filter(name='managers').exists() or self.request.user.is_superuser:
+            return Mailing.objects.all()
+        else:
+            return Mailing.objects.filter(user=self.request.user)
 
 class MailingUpdateView(UpdateView):
     model = Mailing
@@ -106,10 +140,28 @@ class MailingUpdateView(UpdateView):
     template_name = 'mailing/mailing_form.html'
     success_url = reverse_lazy('mailing:mailings')
 
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        is_owner = obj.user == request.user
+
+        if not (is_owner or request.user.is_superuser):
+            return HttpResponseForbidden("У вас нет прав на редактирование этого сообщения")
+
+        return super().dispatch(request, *args, **kwargs)
+
 class MailingDeleteView(DeleteView):
     model = Mailing
     template_name = 'mailing/mailing_confirm_delete.html'
     success_url = reverse_lazy('mailing:mailings')
+
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        is_owner = obj.user == request.user
+
+        if not (is_owner or request.user.is_superuser):
+            return HttpResponseForbidden("У вас нет прав на удаление этого сообщения")
+
+        return super().dispatch(request, *args, **kwargs)
 
 def mailing(request, pk):
     mailing = Mailing.objects.get(pk=pk)
@@ -131,3 +183,12 @@ def mailing(request, pk):
 
     messages.success(request, "Рассылка успешно выполнена")
     return redirect('mailing:mailings')
+
+def is_manager_check(user):
+    return user.is_manager or user.is_superuser
+
+@user_passes_test(is_manager_check)
+def toggle_mailing_active(request, pk):
+    mailing = get_object_or_404(Mailing, pk=pk)
+    mailing.is_active = not mailing.is_active
+    mailing.save()

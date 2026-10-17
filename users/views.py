@@ -1,7 +1,9 @@
 import secrets
-from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import user_passes_test
+from django.http import HttpResponseForbidden
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import CreateView
+from django.views.generic import CreateView, ListView
 from django.contrib.auth.views import LoginView, LogoutView
 from .forms import UserRegisterForm, UserLoginForm
 from .models import User
@@ -47,3 +49,36 @@ def confirm_email(request, token):
     except Exception:
         pass
     return redirect('users:login')
+
+class UserListView(ListView):
+    model = User
+    template_name = 'users/user_list.html'
+    def test_func(self):
+
+        is_in_manager_group = self.request.user.groups.filter(name='managers').exists()
+        return is_in_manager_group or self.request.user.is_superuser
+
+@user_passes_test(lambda u: u.is_manager or u.is_superuser)
+def toggle_user_active(request, pk):
+    user_item = get_object_or_404(User, pk=pk)
+
+    if not user_item.is_superuser and user_item != request.user:
+        user_item.is_active = not user_item.is_active
+        user_item.save()
+    return redirect('users:user_list')
+
+def reset_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        user = get_object_or_404(User, email=email)
+        new_password = secrets.token_hex(4)
+        user.set_password(new_password)
+        user.save()
+        send_mail(
+            subject="Восстановление пароля",
+            message=f"Ваш новый пароль для входа: {new_password}",
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[user.email]
+        )
+        return redirect('users:login')
+    return render(request, 'users/reset_password.html')
